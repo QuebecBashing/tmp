@@ -1,0 +1,36 @@
+name: b vuln
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  update-snapshots:
+    if: >
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'COLLABORATOR' ||
+        github.event.comment.author_association == 'MEMBER'
+      ) && github.event.issue.pull_request && contains(github.event.comment.body, '/run-test')
+    runs-on: ubuntu-latest
+    env:
+      API_KEY: ${{ secrets.API_KEY }}
+    steps:
+      - name: Checkout
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr checkout ${{ github.event.issue.number }}
+
+      - uses: actions/setup-python@v5
+        with:
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install pytest
+          pytest .
+

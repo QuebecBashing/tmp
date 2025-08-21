@@ -1,0 +1,42 @@
+name: b fix
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  update-snapshots:
+    if: >
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'COLLABORATOR' ||
+        github.event.comment.author_association == 'MEMBER'
+      ) && github.event.issue.pull_request && contains(github.event.comment.body, '/run-test')
+    runs-on: ubuntu-latest
+    env:
+      API_KEY: ${{ secrets.API_KEY }}
+    steps:
+      - name: Parse sha from comment
+        id: parse_sha
+        run: |
+          echo "sha=$(echo '${{ github.event.comment.body }}' | grep -oP '(?<=\/run-test )\S+')" >> $GITHUB_OUTPUT
+      - name: Checkout
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.parse_sha.outputs.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install pytest
+          pytest .
+

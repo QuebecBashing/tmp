@@ -1,0 +1,25 @@
+name: c fix
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  echo-issue-details:
+    if: contains(github.event.issue.labels.*.name, 'check-language')
+    runs-on: quick-no-cost-vm
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Echo issue details
+        run: |
+          echo "Issue title: ${{ github.event.issue.title }}"
+          echo "Issue number: ${{ github.event.issue.number }}"
+          echo "Issue body: ${{ github.event.issue.body }}"
+          echo "Label added: ${{ github.event.label.name }}"
+
+      - name: check language
+        run: python check_language.py
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
